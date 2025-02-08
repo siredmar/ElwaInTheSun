@@ -1,6 +1,7 @@
 package client
 
 import (
+	"io"
 	"net/http"
 )
 
@@ -32,13 +33,16 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	return c.Client.Do(req)
 }
 
-func (c *Client) Post(url string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, nil)
+func (c *Client) Post(url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 	if c.Token != "" {
 		req.Header.Set(c.authHeaderKey, c.Token)
+		req.Header.Set("accept", "application/json")
+		req.Header.Set("Content-Type", "application/json")
 	}
+
 	return c.Client.Do(req)
 }

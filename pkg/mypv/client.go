@@ -1,9 +1,12 @@
 package mypv
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"time"
 
 	api "github.com/siredmar/ElwaInTheSun/pkg/api/mypv/v1"
 	"github.com/siredmar/ElwaInTheSun/pkg/client"
@@ -45,4 +48,31 @@ func (c *Client) LiveData() (*api.LiveData, error) {
 		return nil, err
 	}
 	return liveData, nil
+}
+
+func (c *Client) SetPowerWithDuration(powerWatts int, duration time.Duration) error {
+	data := map[string]interface{}{
+		"power":                 powerWatts,
+		"validForMinutes":       int(duration.Minutes()),
+		"pidPower":              nil,
+		"timeBoostOverride":     0,
+		"timeBoostValue":        0,
+		"legionellaBoostBlock":  0,
+		"batteryDischargeBlock": 0,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.Post(c.client.Host+fmt.Sprintf("/api/v1/device/%s/power", c.device), bytes.NewReader(jsonData))
+	if err != nil {
+		log.Println("Error posting data:", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println("Error setting power:", resp.Status)
+	}
+	return nil
 }
