@@ -82,14 +82,14 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.solis.yaml)")
-	rootCmd.PersistentFlags().StringVar(&sonnenToken, "sonnen.token", "", "Auth token to talk to Sonnen Battery")
-	rootCmd.PersistentFlags().StringVar(&sonnenHost, "sonnen.host", "", "Sonnen Battery host")
-	rootCmd.PersistentFlags().StringVar(&mypvToken, "mypv.token", "", "Auth token to talk to mypv")
-	rootCmd.PersistentFlags().StringVar(&mypvSerial, "mypv.serial", "", "Serial number of mypv device")
-	rootCmd.PersistentFlags().StringVar(&controllerInterval, "controller.interval", "55s", "Interval in seconds to check the status of the devices")
-	rootCmd.PersistentFlags().IntVar(&controllerReserved, "controller.reserved", 100, "Reserved power in Watts")
-	rootCmd.PersistentFlags().Float32Var(&maxTemp, "controller.maxTemp", 50, "Maximum temperature to heat in Celsius")
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.solis.yaml)")
+	// rootCmd.PersistentFlags().StringVar(&sonnenToken, "sonnen.token", "", "Auth token to talk to Sonnen Battery")
+	// rootCmd.PersistentFlags().StringVar(&sonnenHost, "sonnen.host", "", "Sonnen Battery host")
+	// rootCmd.PersistentFlags().StringVar(&mypvToken, "mypv.token", "", "Auth token to talk to mypv")
+	// rootCmd.PersistentFlags().StringVar(&mypvSerial, "mypv.serial", "", "Serial number of mypv device")
+	// rootCmd.PersistentFlags().StringVar(&controllerInterval, "controller.interval", "55s", "Interval in seconds to check the status of the devices")
+	// rootCmd.PersistentFlags().IntVar(&controllerReserved, "controller.reserved", 100, "Reserved power in Watts")
+	// rootCmd.PersistentFlags().Float32Var(&maxTemp, "controller.maxTemp", 50, "Maximum temperature to heat in Celsius")
 }
 
 // initConfig reads in config file and ENV variables if set.

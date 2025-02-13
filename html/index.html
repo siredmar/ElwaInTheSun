@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELWA In The Sun</title>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 50%;
+            min-width: 300px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, button {
+            padding: 8px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #live-data {
+            font-weight: bold;
+            padding: 10px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .collapsible {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            border: none;
+            width: 100%;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .active, .collapsible:hover {
+            background-color: #0056b3;
+        }
+        .content {
+            padding: 10px;
+            display: none;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ELWA In The Sun</h1>
+        
+        <!-- <h2>Live Data</h2>
+        <div id="live-data">Waiting for updates...</div>
+         -->
+        <button class="collapsible">Settings</button>
+        <div class="content">
+            <form id="settings-form">
+                <label> Sonnen Token: <input type="text" name="sonnen_token"></label>
+                <label> Sonnen Host: <input type="text" name="sonnen_host"></label>
+                <label> MyPV Token: <input type="text" name="mypv_token"></label>
+                <label> MyPV Serial: <input type="text" name="mypv_serial"></label>
+                <label> Interval [s]: <input type="text" name="interval"></label>
+                <label> Reserved Power [W]: <input type="number" name="reserved"></label>
+                <label> Max Temperature [°C]: <input type="number" name="max_temp"></label>
+                <button type="button" onclick="submitForm()">Save</button>
+            </form>
+            <div id="settings-response"></div>
+        </div>
+    </div>
+    
+    <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        ws.onmessage = function(event) {
+            document.getElementById("live-data").innerText = event.data;
+        };
+
+        function submitForm() {
+            const form = document.getElementById("settings-form");
+            const formData = new FormData(form);
+            let jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value; });
+            
+            fetch("/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("settings-response").innerText = data;
+            });
+        }
+
+        function loadConfig() {
+            fetch("/settings", { method: "GET" })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to load config");
+                }
+                return response.json();
+            })
+            .then(config => {
+                document.querySelector('[name="sonnen_token"]').value = config.sonnen_token || "";
+                document.querySelector('[name="sonnen_host"]').value = config.sonnen_host || "";
+                document.querySelector('[name="mypv_token"]').value = config.mypv_token || "";
+                document.querySelector('[name="mypv_serial"]').value = config.mypv_serial || "";
+                document.querySelector('[name="interval"]').value = config.interval || 0;
+                document.querySelector('[name="reserved"]').value = config.reserved || 0;
+                document.querySelector('[name="max_temp"]').value = config.max_temp || 0;
+            })
+            .catch(error => {
+                console.error("Error loading config:", error);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadConfig();
+            const coll = document.querySelector(".collapsible");
+            const content = document.querySelector(".content");
+            coll.addEventListener("click", function() {
+                this.classList.toggle("active");
+                content.style.display = content.style.display === "block" ? "none" : "block";
+            });
+        });
+    </script>
+</body>
+</html>

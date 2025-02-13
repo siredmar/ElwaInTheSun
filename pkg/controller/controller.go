@@ -2,37 +2,91 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"reflect"
 	"time"
 
 	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
+	"github.com/siredmar/ElwaInTheSun/pkg/server"
 	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
 )
 
 type Controller struct {
 	sonnenClient   *sonnen.Client
 	mypvClient     *mypv.Client
-	period         time.Duration
 	context        context.Context
 	wattsReserved  float32
 	setPointMemory float32
 	maxTemp        float32
+	ticker         *time.Ticker
 }
 
 func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Client, period time.Duration, wattsReserved float32, maxTemp float32) *Controller {
 	return &Controller{
 		sonnenClient:   sonnenClient,
 		mypvClient:     mypvClient,
-		period:         period,
 		context:        ctx,
 		wattsReserved:  wattsReserved,
 		setPointMemory: 0,
 		maxTemp:        maxTemp,
+		ticker:         time.NewTicker(period),
 	}
 }
 
+func (c *Controller) UpdateConfig(new server.Config) error {
+	fmt.Println("UpdatingConfig called")
+	c.wattsReserved = float32(new.ReservedWatts)
+	c.maxTemp = float32(new.MaxTemp)
+	c.sonnenClient.SetHost(new.SonnenHost)
+	c.sonnenClient.SetToken(new.SonnenToken)
+	c.mypvClient.SetToken(new.MypvToken)
+	c.mypvClient.SetDevice(new.MypvSerial)
+	c.maxTemp = float32(new.MaxTemp)
+	period, err := time.ParseDuration(new.Interval)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("new period", period)
+	c.ticker.Reset(period)
+	return nil
+}
+
 func (c *Controller) Run() error {
-	ticker := time.NewTicker(c.period)
+	go func() {
+		configTicker := time.NewTicker(time.Second * 5)
+		err := server.LoadConfig()
+		if err != nil {
+			fmt.Println("Failed to load config:", err)
+		}
+		oldConfig := server.GetConfig()
+		for {
+			fmt.Println("checking config")
+			select {
+			case <-configTicker.C:
+				// check if config has changed
+				err := server.LoadConfig()
+				if err != nil {
+					fmt.Println("Failed to load config:", err)
+				}
+				newConfig := server.GetConfig()
+				if !reflect.DeepEqual(oldConfig, newConfig) {
+					fmt.Println("config changed")
+					oldConfig = newConfig
+					err := c.UpdateConfig(newConfig)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			case <-c.context.Done():
+				return
+			}
+
+		}
+	}()
+
 	select {
 	case <-c.context.Done():
 		return nil
@@ -44,7 +98,7 @@ func (c *Controller) Run() error {
 	}
 	for {
 		select {
-		case <-ticker.C:
+		case <-c.ticker.C:
 			err := c.doWork()
 			if err != nil {
 				return err
@@ -54,6 +108,7 @@ func (c *Controller) Run() error {
 			return nil
 		}
 	}
+
 }
 
 func (c *Controller) doWork() error {

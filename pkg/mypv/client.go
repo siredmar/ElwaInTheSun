@@ -32,6 +32,14 @@ func New(token string, device string) *Client {
 	}
 }
 
+func (c *Client) SetToken(token string) {
+	c.client.SetToken(token)
+}
+
+func (c *Client) SetDevice(device string) {
+	c.device = device
+}
+
 func (c *Client) LiveData() (*api.LiveData, error) {
 	resp, err := c.client.Get(c.client.Host + fmt.Sprintf(LiveDataURIFormatString, c.device))
 	if err != nil {

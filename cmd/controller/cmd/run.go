@@ -17,12 +17,14 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/siredmar/ElwaInTheSun/pkg/controller"
 	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
+	server "github.com/siredmar/ElwaInTheSun/pkg/server"
 	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
 	"github.com/spf13/cobra"
 )
@@ -38,16 +40,20 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: contextAdder.withContext(func(ctx context.Context, cmd *cobra.Command, args []string) {
-		sonnenClient := sonnen.New(sonnenHost, sonnenToken)
-		mypvClient := mypv.New(mypvToken, mypvSerial)
-
-		duration, err := time.ParseDuration(controllerInterval)
+		err := server.LoadConfig()
+		if err != nil {
+			fmt.Println("Failed to load config:", err)
+			return
+		}
+		config := server.GetConfig()
+		sonnenClient := sonnen.New(config.SonnenHost, config.SonnenToken)
+		mypvClient := mypv.New(config.MypvToken, config.MypvSerial)
+		period, err := time.ParseDuration(config.Interval)
 		if err != nil {
 			log.Println(err)
 			os.Exit(1)
 		}
-
-		controller := controller.New(ctx, sonnenClient, mypvClient, duration, float32(controllerReserved), float32(maxTemp))
+		controller := controller.New(ctx, sonnenClient, mypvClient, period, float32(config.ReservedWatts), float32(config.MaxTemp))
 		controller.Run()
 	}),
 }

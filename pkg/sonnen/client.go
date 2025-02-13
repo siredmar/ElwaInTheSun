@@ -24,6 +24,14 @@ func New(host, token string) *Client {
 	}
 }
 
+func (c *Client) SetToken(token string) {
+	c.client.SetToken(token)
+}
+
+func (c *Client) SetHost(host string) {
+	c.client.SetHost(host)
+}
+
 // Status returns the status of the sonnen reader
 func (c *Client) Status() (*api.Status, error) {
 	resp, err := c.client.Get(c.client.Host + StatusURI)

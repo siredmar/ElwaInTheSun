@@ -22,6 +22,14 @@ func NewClient(host string, token string, authHeaderKey string) *Client {
 	}
 }
 
+func (c *Client) SetToken(token string) {
+	c.Token = token
+}
+
+func (c *Client) SetHost(host string) {
+	c.Host = host
+}
+
 func (c *Client) Get(url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
