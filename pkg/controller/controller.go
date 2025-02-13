@@ -70,7 +70,8 @@ func (c *Controller) doWork() error {
 	temp1_f := float32(live.Temp1) / 10.0
 	if temp1_f >= c.maxTemp {
 		log.Printf("temperature is above %f, turning off ELWA\n", c.maxTemp)
-		err = c.mypvClient.SetPowerWithDuration(0, time.Minute)
+		c.setPointMemory = 0
+		err = c.mypvClient.SetPowerWithDuration(int(c.setPointMemory), time.Minute)
 		if err != nil {
 			return err
 		}
