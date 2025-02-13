@@ -2,4 +2,4 @@ tmp
 .vscode
 main
 docker-compose.yaml
-bin
+bin/*

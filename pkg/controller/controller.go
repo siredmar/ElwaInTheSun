@@ -16,9 +16,10 @@ type Controller struct {
 	context        context.Context
 	wattsReserved  float32
 	setPointMemory float32
+	maxTemp        float32
 }
 
-func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Client, period time.Duration, wattsReserved float32) *Controller {
+func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Client, period time.Duration, wattsReserved float32, maxTemp float32) *Controller {
 	return &Controller{
 		sonnenClient:   sonnenClient,
 		mypvClient:     mypvClient,
@@ -26,6 +27,7 @@ func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Clie
 		context:        ctx,
 		wattsReserved:  wattsReserved,
 		setPointMemory: 0,
+		maxTemp:        maxTemp,
 	}
 }
 
@@ -59,15 +61,27 @@ func (c *Controller) doWork() error {
 	if err != nil {
 		return err
 	}
+	live, err := c.mypvClient.LiveData()
+	if err != nil {
+		return err
+	}
+
+	// Cap temperature to maxTemp
+	temp1_f := float32(live.Temp1) * 10.0
+	if temp1_f >= c.maxTemp {
+		log.Printf("temperature is above %f, turning off ELWA\n", c.maxTemp)
+		err = c.mypvClient.SetPowerWithDuration(0, time.Minute)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	gridFeedInW := batteryStatus.GridFeedInW
 	if gridFeedInW > c.wattsReserved {
 		c.setPointMemory = gridFeedInW - c.wattsReserved
 	} else {
 		c.setPointMemory = c.setPointMemory / 2
-	}
-	live, err := c.mypvClient.LiveData()
-	if err != nil {
-		return err
 	}
 	log.Printf("current battery grid feed in: %.0f Watts\n", batteryStatus.GridFeedInW)
 	log.Printf("current ELWA power consumption: %d Watts\n", live.PowerElwa2)

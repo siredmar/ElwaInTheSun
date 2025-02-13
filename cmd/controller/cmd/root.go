@@ -34,6 +34,7 @@ var (
 	mypvSerial         string
 	controllerInterval string
 	controllerReserved int
+	maxTemp            float32
 
 	contextAdder ctxAdder
 )
@@ -88,6 +89,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&mypvSerial, "mypv.serial", "", "Serial number of mypv device")
 	rootCmd.PersistentFlags().StringVar(&controllerInterval, "controller.interval", "55s", "Interval in seconds to check the status of the devices")
 	rootCmd.PersistentFlags().IntVar(&controllerReserved, "controller.reserved", 100, "Reserved power in Watts")
+	rootCmd.PersistentFlags().Float32Var(&maxTemp, "controller.maxTemp", 50, "Maximum temperature to heat in Celsius")
 }
 
 // initConfig reads in config file and ENV variables if set.

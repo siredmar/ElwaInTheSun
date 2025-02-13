@@ -47,7 +47,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		controller := controller.New(ctx, sonnenClient, mypvClient, duration, float32(controllerReserved))
+		controller := controller.New(ctx, sonnenClient, mypvClient, duration, float32(controllerReserved), float32(maxTemp))
 		controller.Run()
 	}),
 }
