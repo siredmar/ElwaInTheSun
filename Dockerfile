@@ -6,4 +6,5 @@ RUN make build
 
 FROM alpine:3.9
 COPY --from=builder /go/bin/controller /controller
+COPY html /html
 CMD ["/controller"]
