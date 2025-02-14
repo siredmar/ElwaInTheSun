@@ -43,7 +43,11 @@
             cursor: pointer;
             border: none;
         }
-        button:hover {
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
             background-color: #218838;
         }
         .notification {
@@ -79,8 +83,9 @@
                 <label> Interval: <input type="text" name="interval" oninput="validateInterval(this)"></label>
                 <span id="interval-error" style="color: red; display: none;">Invalid format</span>
                 <label> Reserved Power: <input type="number" name="reserved"></label>
-                <label> Max Temperature: <input type="number" name="max_temp"></label>
-                <button type="button" onclick="submitForm()">Save</button>
+                <label> Max Temperature: <input type="number" name="max_temp" min="20" max="75" oninput="validateMaxTemp(this)"></label>
+                <span id="max-temp-error" style="color: red; display: none;">Must be between 20 and 75</span>
+                <button type="button" id="save-button" onclick="submitForm()" disabled>Save</button>
             </form>
             <div id="settings-response"></div>
         </div>
@@ -89,6 +94,41 @@
     <div id="notification" class="notification"></div>
     
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            loadConfig();
+            updateSaveButtonState();
+        });
+
+        function updateSaveButtonState() {
+            const isIntervalValid = document.getElementById("interval-error").style.display === "none";
+            const isSonnenHostValid = document.getElementById("sonnen-host-error").style.display === "none";
+            const isMaxTempValid = document.getElementById("max-temp-error").style.display === "none";
+
+            const saveButton = document.getElementById("save-button");
+            saveButton.disabled = !(isIntervalValid && isSonnenHostValid && isMaxTempValid);
+        }
+
+        function validateInterval(input) {
+            const regex = /^(?=\d+[ywdhms])(( ?\d+y)?(?!\d))?(( ?\d+w)?(?!\d))?(( ?\d+d)?(?!\d))?(( ?\d+h)?(?!\d))?(( ?\d+m)?(?!\d))?(( ?\d+s)?(?!\d))?( ?\d+ms)?$/;
+            const errorSpan = document.getElementById("interval-error");
+            errorSpan.style.display = regex.test(input.value) ? "none" : "block";
+            updateSaveButtonState();
+        }
+
+        function validateSonnenHost(input) {
+            const regex = /^(https?:\/\/).+/;
+            const errorSpan = document.getElementById("sonnen-host-error");
+            errorSpan.style.display = regex.test(input.value) ? "none" : "block";
+            updateSaveButtonState();
+        }
+
+        function validateMaxTemp(input) {
+            const errorSpan = document.getElementById("max-temp-error");
+            const value = parseFloat(input.value);
+            errorSpan.style.display = isNaN(value) || value < 20 || value > 75 ? "block" : "none";
+            updateSaveButtonState();
+        }
+
         function loadConfig() {
             fetch("/settings", { method: "GET" })
             .then(response => response.json())
@@ -100,30 +140,11 @@
                 document.querySelector('[name="interval"]').value = config.interval || "";
                 document.querySelector('[name="reserved"]').value = config.reserved || 0;
                 document.querySelector('[name="max_temp"]').value = config.max_temp || 0;
+                updateSaveButtonState();
             })
             .catch(error => {
                 showNotification("Error loading config: " + error.message, false);
             });
-        }
-
-        function validateInterval(input) {
-            const regex = /^(?=\d+[ywdhms])(( ?\d+y)?(?!\d))?(( ?\d+w)?(?!\d))?(( ?\d+d)?(?!\d))?(( ?\d+h)?(?!\d))?(( ?\d+m)?(?!\d))?(( ?\d+s)?(?!\d))?( ?\d+ms)?$/;
-            const errorSpan = document.getElementById("interval-error");
-            if (!regex.test(input.value)) {
-                errorSpan.style.display = "block";
-            } else {
-                errorSpan.style.display = "none";
-            }
-        }
-
-        function validateSonnenHost(input) {
-            const regex = /^(https?:\/\/).+/;
-            const errorSpan = document.getElementById("sonnen-host-error");
-            if (!regex.test(input.value)) {
-                errorSpan.style.display = "block";
-            } else {
-                errorSpan.style.display = "none";
-            }
         }
 
         function submitForm() {
@@ -133,7 +154,7 @@
             formData.forEach((value, key) => { 
                 jsonData[key] = value;
             });
-            
+
             fetch("/settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
