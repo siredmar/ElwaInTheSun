@@ -1,0 +1,9 @@
+{
+  "sonnen_token": "mySonnenToken",
+  "sonnen_host": "http://192.168.1.123",
+  "mypv_token": "myPVToken",
+  "mypv_serial": "1111111111111111",
+  "interval": "55s",
+  "reserved": 100,
+  "max_temp": 50
+}

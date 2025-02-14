@@ -22,7 +22,6 @@ type Config struct {
 	Interval      string `json:"interval"`
 	ReservedWatts int    `json:"reserved"`
 	MaxTemp       int    `json:"max_temp"`
-	DatabasePath  string `json:"database_path"`
 }
 
 var config Config
