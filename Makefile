@@ -7,7 +7,7 @@ build:
 	CGO_ENABLED=0 GOOS=${GO_OS} GOARCH=${GO_ARCH} go build $(GO_LDFLAGS) -o bin/controller cmd/controller/main.go 
 
 docker:
-	docker build -t siredmar/elwainthesun:latest .
+	docker build -t siredmar/elwainthesun:$(VERSION) .
 
 push:
-	docker push siredmar/elwainthesun:latest
+	docker push siredmar/elwainthesun:$(VERSION)
