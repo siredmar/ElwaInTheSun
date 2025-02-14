@@ -46,7 +46,7 @@ var serveCmd = &cobra.Command{
 		// go server.StartDataLoop()
 
 		log.Infof("Server running on :%d\n", cmdargs.Port)
-		err := http.ListenAndServe(fmt.Sprintf(":%d", cmdargs.Port), nil)
+		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cmdargs.Port), nil)
 		if err != nil {
 			log.Panicln(err)
 		}
