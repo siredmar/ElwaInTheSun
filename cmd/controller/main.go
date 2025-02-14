@@ -17,13 +17,29 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/siredmar/ElwaInTheSun/cmd/controller/cmd"
 )
+
+func init() {
+	lvl, ok := os.LookupEnv("LOG_LEVEL")
+	// LOG_LEVEL not set, let's default to debug
+	if !ok {
+		lvl = "info"
+	}
+	// parse string, this is built-in feature of logrus
+	ll, err := log.ParseLevel(lvl)
+	if err != nil {
+		ll = log.DebugLevel
+	}
+	// set global log level
+	log.SetLevel(ll)
+}
 
 func main() {
 	exitCode := 0
@@ -40,7 +56,6 @@ func main() {
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGTERM)
 
 	defer func() {
-		log.Println("Ending...")
 		signal.Stop(signals)
 		cancel()
 	}()
@@ -54,7 +69,7 @@ func main() {
 		case <-ctx.Done():
 		}
 	}()
-
+	log.Infoln("Starting controller")
 	if err := cmd.Execute(ctx); err != nil {
 		log.Println(err)
 		exitCode = 1

@@ -2,8 +2,7 @@ package controller
 
 import (
 	"context"
-	"fmt"
-	"log"
+
 	"os"
 	"reflect"
 	"time"
@@ -11,6 +10,8 @@ import (
 	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
 	"github.com/siredmar/ElwaInTheSun/pkg/server"
 	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Controller struct {
@@ -36,7 +37,7 @@ func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Clie
 }
 
 func (c *Controller) UpdateConfig(new server.Config) error {
-	fmt.Println("UpdatingConfig called")
+	log.Debugln("UpdatingConfig called")
 	c.wattsReserved = float32(new.ReservedWatts)
 	c.maxTemp = float32(new.MaxTemp)
 	c.sonnenClient.SetHost(new.SonnenHost)
@@ -49,8 +50,9 @@ func (c *Controller) UpdateConfig(new server.Config) error {
 		log.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println("new period", period)
+	log.Debugln("new period", period)
 	c.ticker.Reset(period)
+	c.setPointMemory = 0
 	return nil
 }
 
@@ -59,21 +61,21 @@ func (c *Controller) Run() error {
 		configTicker := time.NewTicker(time.Second * 5)
 		err := server.LoadConfig()
 		if err != nil {
-			fmt.Println("Failed to load config:", err)
+			log.Panicln("Failed to load config:", err)
 		}
 		oldConfig := server.GetConfig()
 		for {
-			fmt.Println("checking config")
+			log.Debugln("checking config")
 			select {
 			case <-configTicker.C:
 				// check if config has changed
 				err := server.LoadConfig()
 				if err != nil {
-					fmt.Println("Failed to load config:", err)
+					log.Panicln("Failed to load config:", err)
 				}
 				newConfig := server.GetConfig()
 				if !reflect.DeepEqual(oldConfig, newConfig) {
-					fmt.Println("config changed")
+					log.Debugln("config changed")
 					oldConfig = newConfig
 					err := c.UpdateConfig(newConfig)
 					if err != nil {
@@ -112,6 +114,9 @@ func (c *Controller) Run() error {
 }
 
 func (c *Controller) doWork() error {
+	log.Debugf("doWork: %f\n", c.maxTemp)
+	log.Debugf("doWork: %f\n", c.wattsReserved)
+
 	batteryStatus, err := c.sonnenClient.Status()
 	if err != nil {
 		return err

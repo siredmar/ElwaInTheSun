@@ -22,22 +22,20 @@ import (
 
 	"github.com/spf13/cobra"
 
+	log "github.com/sirupsen/logrus"
+
+	cmdargs "github.com/siredmar/ElwaInTheSun/pkg/args"
 	server "github.com/siredmar/ElwaInTheSun/pkg/server"
 )
 
 // serveCmd gives current state
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Run the http backend",
+	Long:  `Run the http backend that serves the frontend and handles WebSocket connections.`,
 	Run: contextAdder.withContext(func(ctx context.Context, cmd *cobra.Command, args []string) {
 		if err := server.LoadConfig(); err != nil {
-			fmt.Println("Failed to load config:", err)
+			log.Errorln("Failed to load config:", err)
 			return
 		}
 
@@ -47,21 +45,14 @@ to quickly create a Cobra application.`,
 
 		// go server.StartDataLoop()
 
-		fmt.Println("Server running on :8080")
-		http.ListenAndServe(":8080", nil)
+		log.Infof("Server running on :%d\n", cmdargs.Port)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", cmdargs.Port), nil)
+		if err != nil {
+			log.Panicln(err)
+		}
 	}),
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// lateststatusCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// lateststatusCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

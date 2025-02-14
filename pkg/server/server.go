@@ -1,10 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 var clients = make(map[*websocket.Conn]bool)
@@ -18,7 +18,7 @@ var upgrader = websocket.Upgrader{
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("WebSocket upgrade error:", err)
+		log.Errorln("WebSocket upgrade error:", err)
 		return
 	}
 	defer conn.Close()

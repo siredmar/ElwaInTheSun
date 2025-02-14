@@ -19,6 +19,7 @@ import (
 	"log"
 
 	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
+	server "github.com/siredmar/ElwaInTheSun/pkg/server"
 	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
 	"github.com/spf13/cobra"
 )
@@ -26,40 +27,34 @@ import (
 // statusCmd gives current state
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Give current state",
+	Long:  `Give current state about the PV Battery and the ELWA2 device.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sonnenClient := sonnen.New(sonnenHost, sonnenToken)
+		if err := server.LoadConfig(); err != nil {
+			log.Println("Failed to load config:", err)
+			return
+		}
+		config := server.GetConfig()
+		sonnenClient := sonnen.New(config.SonnenHost, config.SonnenToken)
 		status, err := sonnenClient.Status()
 		if err != nil {
 			log.Println(err)
 		}
-		log.Println(status.GridFeedInW)
-		mypvClient := mypv.New(mypvToken, mypvSerial)
+		if status.GridFeedInW < 0 {
+			log.Printf("Grid consumption: %.2f W\n", -status.GridFeedInW)
+		} else {
+			log.Printf("Grid feed-in: %.2f W\n", status.GridFeedInW)
+		}
+		mypvClient := mypv.New(config.MypvToken, config.MypvSerial)
 		data, err := mypvClient.LiveData()
 		if err != nil {
 			log.Println(err)
 		}
-
-		log.Println(data.PowerElwa2)
+		log.Printf("ELWA2 Temperature: %d °C \n", data.Temp1)
+		log.Printf("ELWA2 power: %d W\n", data.PowerElwa2)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// lateststatusCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// lateststatusCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

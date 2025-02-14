@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -32,17 +31,12 @@ import (
 // runCmd gives current state
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Run the controller",
+	Long:  `Run the water heating controller that interacts with the PV Battery and the ELWA2 device.`,
 	Run: contextAdder.withContext(func(ctx context.Context, cmd *cobra.Command, args []string) {
 		err := server.LoadConfig()
 		if err != nil {
-			fmt.Println("Failed to load config:", err)
+			log.Println("Failed to load config:", err)
 			return
 		}
 		config := server.GetConfig()
@@ -60,14 +54,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// lateststatusCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// lateststatusCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

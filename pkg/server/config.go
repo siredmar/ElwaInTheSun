@@ -2,13 +2,15 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/siredmar/ElwaInTheSun/pkg/args"
 )
 
 // Config structure
@@ -35,7 +37,7 @@ func GetConfig() Config {
 func LoadConfig() error {
 	ConfigLock.Lock()
 	defer ConfigLock.Unlock()
-	file, err := os.ReadFile("config.json")
+	file, err := os.ReadFile(args.ConfigFile)
 	if err != nil {
 		return err
 	}
@@ -44,14 +46,14 @@ func LoadConfig() error {
 
 // Save configuration to file
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Incoming request...")
+	log.Debugf("Incoming request...")
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Received JSON:", string(bodyBytes))
+	log.Debugln("Received JSON:", string(bodyBytes))
 
 	ConfigLock.Lock()
 	defer ConfigLock.Unlock()
@@ -90,7 +92,11 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save config", http.StatusInternalServerError)
 		return
 	}
-	_ = os.WriteFile("config.json", file, 0644)
+	err = os.WriteFile(args.ConfigFile, file, 0644)
+	if err != nil {
+		http.Error(w, "Failed to save config", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
