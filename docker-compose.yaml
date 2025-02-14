@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+  frontend:
+    image: siredmar/elwainthesun:a23205b2b1d5beba1f137ca6be1c588e01cb267b
+    command: /controller serve -c /config.json
+    ports:
+      - "8080:8080"
+    depends_on:
+      - controller
+    volumes:
+      - /root/elwa/config.json:/config.json
+    environment:
+      LOG_LEVEL: info
+  controller:
+    image: siredmar/elwainthesun:a23205b2b1d5beba1f137ca6be1c588e01cb267b
+    command: /controller run -c /config.json
+    volumes:
+      - /root/elwa/config.json:/config.json
+    environment:
+      LOG_LEVEL: info
