@@ -44,7 +44,7 @@ func LoadConfig() error {
 }
 
 // Save configuration to file
-func SaveConfig(w http.ResponseWriter, r *http.Request) {
+func (s *Server) SaveConfig(w http.ResponseWriter, r *http.Request) {
 	log.Debugf("Incoming request...")
 
 	bodyBytes, err := io.ReadAll(r.Body)
@@ -100,7 +100,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func ReturnConfig(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ReturnConfig(w http.ResponseWriter, r *http.Request) {
 	err := LoadConfig()
 	if err != nil {
 		http.Error(w, "Failed to load config", http.StatusInternalServerError)
@@ -119,11 +119,11 @@ func ReturnConfig(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetConfigHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		ReturnConfig(w, r)
+		s.ReturnConfig(w, r)
 	} else if r.Method == http.MethodPost {
-		SaveConfig(w, r)
+		s.SaveConfig(w, r)
 	} else {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 	}

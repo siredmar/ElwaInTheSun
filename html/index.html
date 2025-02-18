@@ -38,7 +38,7 @@
             border: 1px solid #ccc;
         }
         button {
-            background-color: #28a745;
+            background-color: #004caf;
             color: white;
             cursor: pointer;
             border: none;
@@ -48,7 +48,7 @@
             cursor: not-allowed;
         }
         button:hover:not(:disabled) {
-            background-color: #218838;
+            background-color: #004caf;
         }
         .notification {
             position: fixed;
@@ -66,12 +66,106 @@
         .error {
             background-color: #dc3545;
         }
+        /* Collapsible sections */
+        .collapsible {
+            background-color: #6a88af;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 18px;
+            margin-top: 1rem;
+        }
+        .active, .collapsible:hover {
+            background-color: #2763b3;
+        }
+        .content {
+            display: none;
+            padding: 10px 0;
+            border-top: 1px solid #ddd;
+        }
+        /* Live View styles */
+        .grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 400px;
+            margin-top: 1rem;
+        }
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 20%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            background: linear-gradient(135deg, #ebebeb, #ebebeb);
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            transition: transform 0.1s ease-in-out;
+            transform-origin: center center;
+        }
+        .circle:hover {
+            transform: scale(1.25);
+        }
+        .production {
+            top: 20px;
+            text-align: center;
+            border: 2px solid orange;
+        }
+        .grid-feed {
+            bottom: 20px;
+            text-align: center;
+            border: 2px solid gray;
+        }
+        .battery {
+            text-align: center;
+            left: 30%;
+            top: 40%;
+            border: 2px solid green;
+        }
+        .consumption {
+            text-align: center;
+            right: 30%;
+            top: 40%;
+            border: 2px solid rgb(247, 0, 255);
+        }
+        .house {
+            text-align: center;
+            right: 20%;
+            top: 25%;
+            border: 2px solid blue;
+        }
+        .heater {
+            text-align: center;
+            right: 20%;
+            top: 60%;
+            border: 2px solid rgb(255, 0, 0);
+        }
     </style>
 </head>
 <body onload="loadConfig()">
     <div class="container">
         <h1>ELWA In The Sun</h1>
         
+        <!-- Live View Collapsible (Expanded by default) -->
+        <button class="collapsible active">Live View</button>
+        <div class="content" style="display: block;">
+            <div class="grid">
+                <div class="circle production" id="production">PV: 0 kW</div>
+                <div class="circle grid-feed" id="grid">Grid: 0 kW</div>
+                <div class="circle battery" id="battery">Battery: 0% | 0 kW</div>
+                <div class="circle house" id="house">House: 0 kW</div>
+                <div class="circle heater" id="heater">Heater: 0 kW</div>
+                <div class="circle consumption" id="consumption">Total Consumption: 0 kW</div>
+            </div>
+        </div>
+
+        <!-- Settings Collapsible (Collapsed by default) -->
         <button class="collapsible">Settings</button>
         <div class="content">
             <form id="settings-form">
@@ -90,10 +184,11 @@
             <div id="settings-response"></div>
         </div>
     </div>
-    
+
     <div id="notification" class="notification"></div>
-    
+
     <script>
+        // Existing logic for loading/saving settings
         document.addEventListener("DOMContentLoaded", function () {
             loadConfig();
             updateSaveButtonState();
@@ -151,7 +246,7 @@
             const form = document.getElementById("settings-form");
             const formData = new FormData(form);
             let jsonData = {};
-            formData.forEach((value, key) => { 
+            formData.forEach((value, key) => {
                 jsonData[key] = value;
             });
 
@@ -185,6 +280,37 @@
                 notification.style.display = "none";
             }, 3000);
         }
+
+        // Live View data fetching
+        function fetchLiveData() {
+            fetch("/powerdata")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("production").innerText = `PV\n${data.productionWatt} W`;
+                    document.getElementById("grid").innerText = `Grid\n${data.gridWatt} W`;
+                    document.getElementById("battery").innerHTML = `Battery\n${data.batteryPercentage}%\n${(data.batteryWatt).toFixed(0)} W`;
+                    const netHouse = (data.consumptionWatt - data.heaterWatt);
+                    document.getElementById("house").innerText = `House\n${netHouse.toFixed(0)} W`;
+                    document.getElementById("heater").innerText = `Heater\n${(data.heaterWatt).toFixed(0)} W\n${(data.temp1 / 10).toFixed(2)} °C\n${(data.temp2 / 10).toFixed(0)} °C`;
+                    document.getElementById("consumption").innerText = `Total Consumption\n${data.consumptionWatt} W`;
+                })
+                .catch(error => console.error("Error fetching /power-data", error));
+        }
+        setInterval(fetchLiveData, 2000);
+        fetchLiveData();
+
+        // Collapsible toggling
+        document.querySelectorAll(".collapsible").forEach(button => {
+            button.addEventListener("click", function() {
+                this.classList.toggle("active");
+                let content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+        });
     </script>
 </body>
 </html>

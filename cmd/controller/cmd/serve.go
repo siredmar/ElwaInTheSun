@@ -17,15 +17,14 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
 
-	cmdargs "github.com/siredmar/ElwaInTheSun/pkg/args"
+	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
 	server "github.com/siredmar/ElwaInTheSun/pkg/server"
+	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
 )
 
 // serveCmd gives current state
@@ -38,17 +37,17 @@ var serveCmd = &cobra.Command{
 			log.Errorln("Failed to load config:", err)
 			return
 		}
-
-		http.HandleFunc("/", server.ServeFrontend)
-		http.HandleFunc("/ws", server.HandleWebSocket)
-		http.HandleFunc("/settings", server.GetConfigHandler)
-
-		// go server.StartDataLoop()
-
-		log.Infof("Server running on :%d\n", cmdargs.Port)
-		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cmdargs.Port), nil)
+		err := server.LoadConfig()
 		if err != nil {
-			log.Panicln(err)
+			log.Println("Failed to load config:", err)
+			return
+		}
+		config := server.GetConfig()
+		sonnenClient := sonnen.New(config.SonnenHost, config.SonnenToken)
+		mypvClient := mypv.New(config.MypvToken, config.MypvSerial)
+		s := server.NewServer(sonnenClient, mypvClient)
+		if err := s.Run(); err != nil {
+			log.Fatalln("Failed to run server:", err)
 		}
 	}),
 }

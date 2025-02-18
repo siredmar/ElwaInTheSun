@@ -21,11 +21,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/siredmar/ElwaInTheSun/pkg/args"
 	"github.com/siredmar/ElwaInTheSun/pkg/controller"
 	"github.com/siredmar/ElwaInTheSun/pkg/mypv"
 	server "github.com/siredmar/ElwaInTheSun/pkg/server"
 	"github.com/siredmar/ElwaInTheSun/pkg/sonnen"
 	"github.com/spf13/cobra"
+
+	commandargs "github.com/siredmar/ElwaInTheSun/pkg/args"
 )
 
 // runCmd gives current state
@@ -47,11 +50,12 @@ var runCmd = &cobra.Command{
 			log.Println(err)
 			os.Exit(1)
 		}
-		controller := controller.New(ctx, sonnenClient, mypvClient, period, float32(config.ReservedWatts), float32(config.MaxTemp))
+		controller := controller.New(ctx, sonnenClient, mypvClient, period, float32(config.ReservedWatts), float32(config.MaxTemp), commandargs.DryRun)
 		controller.Run()
 	}),
 }
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+	runCmd.PersistentFlags().BoolVarP(&args.DryRun, "dry-run", "d", false, "Dry run")
 }

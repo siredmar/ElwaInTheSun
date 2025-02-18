@@ -3,3 +3,4 @@ tmp
 .vscode
 main
 bin/*
+myconfig copy.json

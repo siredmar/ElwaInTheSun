@@ -22,9 +22,10 @@ type Controller struct {
 	setPointMemory float32
 	maxTemp        float32
 	ticker         *time.Ticker
+	dryRun         bool
 }
 
-func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Client, period time.Duration, wattsReserved float32, maxTemp float32) *Controller {
+func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Client, period time.Duration, wattsReserved float32, maxTemp float32, dryRun bool) *Controller {
 	return &Controller{
 		sonnenClient:   sonnenClient,
 		mypvClient:     mypvClient,
@@ -33,6 +34,7 @@ func New(ctx context.Context, sonnenClient *sonnen.Client, mypvClient *mypv.Clie
 		setPointMemory: 0,
 		maxTemp:        maxTemp,
 		ticker:         time.NewTicker(period),
+		dryRun:         dryRun,
 	}
 }
 
@@ -131,9 +133,11 @@ func (c *Controller) doWork() error {
 	if temp1_f >= c.maxTemp {
 		log.Printf("temperature is above %f, turning off ELWA\n", c.maxTemp)
 		c.setPointMemory = 0
-		err = c.mypvClient.SetPowerWithDuration(int(c.setPointMemory), time.Minute)
-		if err != nil {
-			return err
+		if !c.dryRun {
+			err = c.mypvClient.SetPowerWithDuration(int(c.setPointMemory), time.Minute)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -149,6 +153,10 @@ func (c *Controller) doWork() error {
 	err = c.mypvClient.SetPowerWithDuration(int(c.setPointMemory), time.Minute)
 	if err != nil {
 		return err
+	}
+	if c.dryRun {
+		log.Printf("dry run: new ELWA set point: %.0f Watts\n", c.setPointMemory)
+		return nil
 	}
 	log.Printf("new ELWA set point: %.0f Watts\n", c.setPointMemory)
 	return nil
