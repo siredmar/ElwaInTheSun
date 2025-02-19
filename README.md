@@ -48,7 +48,8 @@ The system consists of two services:
 version: "3.3"
 services:
   frontend:
-    image: siredmar/elwainthesun:v0.2.0
+    restart: always
+    image: siredmar/elwainthesun:v0.3.1
     command: /controller serve -c /config.json
     ports:
       - "8080:8080"
@@ -59,7 +60,8 @@ services:
     environment:
       LOG_LEVEL: info
   controller:
-    image: siredmar/elwainthesun:v0.2.0
+    restart: always
+    image: siredmar/elwainthesun:v0.3.1
     command: /controller run -c /config.json
     volumes:
       - /root/elwa/config.json:/config.json
